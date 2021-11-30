@@ -229,16 +229,13 @@ function scrollAnimationHeader(className) {
 function clickOnWindow(event) {
 	if (event.target.closest(".header__menu-arrow")) {
 		clickMenuArrow("scrollY-visible");
-		console.log("Click menu-arrow");
 	}
 	else {
 		if (event.target.closest(".header__burger")) {
 			clickBurger();
-			console.log("Click header__burger");
 		}
 		if(!event.target.closest(".header__menu")){
 			clickNotMenuArrow(event, "scrollY-visible");
-			console.log("Click !header__menu");
 		}
 	}
 	
@@ -290,38 +287,46 @@ function mouseMovePopup(event) {
 	popup.scrollTop = y;
 }
 
-function clickPopupZoom() {
+function changeWidthSlide(zoom) {	
 	const currentSlide = popupSwiper.wrapperEl.querySelector(".swiper-slide-active img");
-	const widthSlide = isZoom ? 0 : Math.min(currentSlide.naturalWidth, popup.clientWidth * 2);
-	zoom.classList.toggle("fa-compress");
-	zoom.classList.toggle("fa-expand");
-	if (currentSlide.naturalWidth < popup.clientWidth && !isZoom){
-		return;
+	const widthSlide = zoom ? 0 : Math.min(currentSlide.naturalWidth, popup.clientWidth * 2);
+	
+	if (currentSlide.naturalWidth < popup.clientWidth && !zoom){
+		return false;
 	}
 	popupWrapper.style.width = popup.clientWidth > (widthSlide + 60) ? "" : `${widthSlide + 60}px`;
 
-	 
-	if (!isZoom){
-		popupWrapper.addEventListener("transitionstart", function(){
-			stopScrolling = false;
-			autoScrollLeftPopup();
-		}, {"once": true});
-		popupWrapper.addEventListener("transitionend", function(){
-			stopScrolling = true;
-			popup.scrollLeft += popupWrapper.clientWidth - window.innerWidth;
-		}, {"once": true});
-		popupWrapper.addEventListener("transitioncancel", function(){
-			stopScrolling = true;
-			popup.scrollLeft += (popupWrapper.clientWidth - window.innerWidth);
-		}, {"once": true});
+	popupWrapper.addEventListener("transitionstart", function(){
+		stopScrolling = false;
+		autoScrollLeftPopup();
+	}, {"once": true});
+	popupWrapper.addEventListener("transitionend", function(){
+		stopScrolling = true;
+		popup.scrollLeft += popupWrapper.clientWidth - window.innerWidth;
+	}, {"once": true});
+	popupWrapper.addEventListener("transitioncancel", function(){
+		stopScrolling = true;
+		popup.scrollLeft += (popupWrapper.clientWidth - window.innerWidth);
+	}, {"once": true});
+
+
+	return true;
+}
+
+
+function clickPopupZoom() {
+	zoom.classList.toggle("fa-compress");
+	zoom.classList.toggle("fa-expand");
+
+	if (changeWidthSlide(isZoom)){
 		window.addEventListener("resize", defaultWidthPopupWrapper, {"once":true});
 		window.addEventListener("mousemove", mouseMovePopup, {"capture":true});
+		isZoom = !isZoom;
 	}
 	else{
 		window.removeEventListener("resize", defaultWidthPopupWrapper, {"once":true});
 		window.removeEventListener("mousemove", mouseMovePopup, {"capture":true});
 	}
-	isZoom = !isZoom;
 }
 
 function defaultWidthPopupWrapper() {
@@ -330,14 +335,18 @@ function defaultWidthPopupWrapper() {
 }
 
 function clickPopupClose() {
-	zoom.classList.remove("fa-compress");
-	zoom.classList.add("fa-expand");
-	isZoom = false;
-	popupWrapper.style.width = "";
+	clickChangeSlide();
 	popup.classList.remove("_active");
 	bodyScrollLock("lock-scroll", containers);
 	popupSwiper.removeAllSlides();
 	popup.removeEventListener("click", clickPopup);
+}
+
+function clickChangeSlide() {
+	zoom.classList.remove("fa-compress");
+	zoom.classList.add("fa-expand");
+	isZoom = false;
+	popupWrapper.style.width = "";
 }
 
 function clickPopup(event) {
@@ -347,6 +356,13 @@ function clickPopup(event) {
 	else if (event.target.closest(".popup__close")) {
 		clickPopupClose();
 	}
+	else if(event.target.closest(".swiper-button-prev")){
+		clickChangeSlide();
+	}
+	else if(event.target.closest(".swiper-button-next")){
+		clickChangeSlide();
+	}
+		
 	else if(!event.target.closest(".popup .image-slider")){
 		if (isZoom){
 			zoom.classList.toggle("fa-compress");
